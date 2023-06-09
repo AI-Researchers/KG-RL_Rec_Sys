@@ -1,4 +1,4 @@
-# Knowledge Graph Drievn Reinforcement Learning Based Explainable Recommender System
+# Knowledge Graph Drievn Reinforcement Learning Based Recommender System
 This approach mainly have 5 modules, preprocessing and kg creation, generating kg embedding, train reinforcement learning agent, recommending items for customers and path generation and evaluation.
 
 ## How to run the code 
@@ -11,7 +11,7 @@ run the processing.ipynb file
 
 2. KG creation, embeddings generation, model building:
 
-run the pgpr.ipynb file
+run the KG_RL_Rec_Sys.ipynb file
 
 3. Evaluation and Path generation:
 
