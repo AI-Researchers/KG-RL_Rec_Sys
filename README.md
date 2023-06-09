@@ -1,16 +1,9 @@
-# WP2 - Knowledge Graph Drievn Reinforcement Learning Based Explainable Recommender System
+# Knowledge Graph Drievn Reinforcement Learning Based Explainable Recommender System
 This approach mainly have 5 modules, preprocessing and kg creation, generating kg embedding, train reinforcement learning agent, recommending items for customers and path generation and evaluation.
-
-## Datasets
-We are using Fidelity RecSys Challenge sample dataset v3. This dataset has three csv files - articles.csv, user_v3.csv and Rec_Sys_sample_train_data_v3.csv in the folder named Fidelity_RecSys_Challenge_Sample_Dataset_v3. The code will divide the Rec_Sys_sample_train_data_v3.csv in train and test data. 
-You need to upload these three data files to Amazon S3 and replace the path in the code with your own path. 
-We have already uploaded these data file to S3. If you can access the existing data path that is there in the code then there is no need to change the path.
-Please upload the RL_based_Recommender_System folder as it is to the Amazon Sagemaker and run the three .ipynb files as described below.
-
 
 ## How to run the code 
 
-All the code need to be run on Amazon Sagemaker. Run the below three .ipynb files in the same order as they are listed.
+Run the below three .ipynb files in the same order as they are listed.
 
 1. Preprocess the data:
 
@@ -52,6 +45,6 @@ run evaluation.ipynb
 
 
 ## Parameter Settings
-For best results on dataset v3 use below parameter values:
+For best results on RL-KG RecSys use below parameter values:
 learning rate = 0.0001
 number of epoch = 10
