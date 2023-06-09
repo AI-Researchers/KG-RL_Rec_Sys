@@ -22,26 +22,8 @@ run evaluation.ipynb
 - Python >= 3.6
 - PyTorch = 1.0
 
+  Install python packages using provided requirements.txt file.
 
-## Directory layout
-
-  .
-    ├── ...
-    ├── RL_based_Recommender_System     					# Project Directory
-    │   ├── data ──               							# Folder containing Challenge_Dataset folder
-    │   ├          ├── Challenge_Dataset   					# Folder to store the preprocessed data files that code will generate
-	│   ├── Customer_Article_Dataset     # Folder containing articles.csv, user_v3.csv and Rec_Sys_sample_train_data.csv files
-    │   ├── data_utils.py           						# Custom utility functions
-    │   ├── evluation.ipynb           						# Evaluation and path generation
-    │   ├── kg_env.py            							# Train RL agent
-    │   ├── knowledge_graph.py      						# Create Knowledge Graph 
-    │   ├── KG_RL_Rec_Sys.ipynb           							# KG creation, generating kg embedding, train reinforcement learning agent and prediction    
-    │   ├── processing.ipynb     							# Preprocess the Fidelity data and create required data files in .txt format
-    │   ├── transe_model.py        							# Generate KG embedding
-    │   ├── utils.py    									# Custom utility functions
-    │   ├── requirements.txt        						# Project dependency
-    │   └── README.md               						# Project description
-    └── ...
 
 
 ## Parameter Settings
