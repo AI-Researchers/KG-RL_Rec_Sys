@@ -1,5 +1,5 @@
 
-# WP2 - KG Driven Recomendation System
+# KG Driven XGBoost based Recomendation System
 Recommendatiion System is built using learning to rank approach. Popular boosting
 models like XGBoostRanker, LightGBMRanker, CatBoostRanker trained on Recsys Challenge data incorporating user article, features, KG embeddings,SentenceTransformer embeddings.
 
