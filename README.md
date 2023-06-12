@@ -24,10 +24,3 @@ run evaluation.ipynb
 
   Install python packages using provided requirements.txt file.
 
-
-
-## Parameter Settings
-For best results on RL-KG RecSys use below parameter values:
-
-- learning rate = 0.0001
-- number of epoch = 10
