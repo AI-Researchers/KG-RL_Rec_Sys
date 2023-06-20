@@ -33,24 +33,27 @@ class DataPreprocessing:
         # Articles 
         self.df_articles = pd.read_csv(dataset_dict['articles'])
         self.df_articles['all_text'] = pd.Series(self.df_articles[['headline','teaser','text']].fillna('').values.tolist()).str.join(' ')
-        self.tcm_clicks_count_df = self.train_data[self.train_data['response'] == 1].groupby('tcm_id').size().reset_index(name='tcm_click_count').sort_values( ['tcm_click_count'],ascending=False)
-        self.articles_merged_df = pd.merge(self.df_articles, self.tcm_clicks_count_df, on=["tcm_id"])
-        #self.cold_tcm_ids = ['tcm:526-12173','tcm:526-161967','tcm:526-387709','tcm:526-635549','tcm:526-766928']
-        self.articles_merged_df = self.articles_merged_df[~self.articles_merged_df['tcm_id'].isin(['tcm:526-12173','tcm:526-161967','tcm:526-387709','tcm:526-635549','tcm:526-766928'])]
-        self.articles_merged_df['all_text_len'] = self.articles_merged_df['all_text'].str.len()
+        
+        self.df_train_test = pd.concat([self.train_data,self.test_data])
+        self.tcm_clicks_count_df = self.df_train_test[self.df_train_test['response'] == 1].groupby('article_id').size().reset_index(name='tcm_click_count').sort_values( ['tcm_click_count'],ascending=False)
+        self.tcm_clicks_count_df['article_popularity'] = self.tcm_clicks_count_df['tcm_click_count'] / self.tcm_clicks_count_df['tcm_click_count'].sum()
+        self.articles_merged_df = pd.merge(self.df_articles, self.tcm_clicks_count_df, on=["article_id"])
+        
+        self.articles_merged_df = self.articles_merged_df[~self.articles_merged_df['article_id'].isin(['tcm:526-12173','tcm:526-161967','tcm:526-387709','tcm:526-635549','tcm:526-766928'])]
+        self.articles_merged_df['article_length'] = self.articles_merged_df['all_text'].str.len()
         self.df_articles = self.articles_merged_df
-        self.df_articles = self.df_articles[['tcm_id','tcm_click_count','all_text','all_text_len']]
+        self.df_articles = self.df_articles[['article_id','article_popularity','all_text','article_length']]
         
         # Users
         self.df_users = pd.read_csv(dataset_dict['users'])
-        self.df_users = self.df_users.loc[:, ~self.df_users.columns.isin(['age','event_date','gender'])]
+        self.df_users = self.df_users.loc[:, ~self.df_users.columns.isin(['f_1','xd','f_0'])]
         
         # join datasets on 'tcm_id' and 'ip'
-        self.train_data = self.train_data.merge(self.df_users,on='ip')
-        self.train_data = self.train_data.merge(self.df_articles,on='tcm_id')
+        self.train_data = self.train_data.merge(self.df_users,on='qid')
+        self.train_data = self.train_data.merge(self.df_articles,on='article_id')
         
-        self.test_data = self.test_data.merge(self.df_users,on='ip')
-        self.test_data = self.test_data.merge(self.df_articles,on='tcm_id')
+        self.test_data = self.test_data.merge(self.df_users,on='qid')
+        self.test_data = self.test_data.merge(self.df_articles,on='article_id')
         
         
         # encoding
@@ -58,26 +61,23 @@ class DataPreprocessing:
         self.tcm_id_le = LabelEncoder()
         self.date_le = LabelEncoder()
 
-        self.test_data['tcm_id'] = self.tcm_id_le.fit_transform(self.test_data['tcm_id'])
-        self.train_data['tcm_id'] = self.tcm_id_le.transform(self.train_data['tcm_id'])
+        self.test_data['article_id'] = self.tcm_id_le.fit_transform(self.test_data['article_id'])
+        self.train_data['article_id'] = self.tcm_id_le.transform(self.train_data['article_id'])
 
-        unique_dates = list(self.test_data['event_date'].unique()) + list(self.train_data['event_date'].unique())
+        unique_dates = list(self.test_data['xd'].unique()) + list(self.train_data['xd'].unique())
         self.date_le = self.date_le.fit(unique_dates)
 
-        self.test_data['event_date'] = self.date_le.transform(self.test_data['event_date'])
-        self.train_data['event_date'] = self.date_le.transform(self.train_data['event_date'])
+        self.test_data['xd'] = self.date_le.transform(self.test_data['xd'])
+        self.train_data['xd'] = self.date_le.transform(self.train_data['xd'])
         
-        self.test_data = self.test_data.sort_values(by=['ip','response'],ascending = False).reset_index(drop=True)
-        self.test_data = self.test_data.groupby('ip').head(30).reset_index(drop=True)
-
         print(self.test_data.shape, self.train_data.shape)
         
-    def return_inverse_transform(self,key='tcm_id'):
+    def return_inverse_transform(self,key='article_id'):
         """
         Returns initialised label encoder object to inverse transform
         encoded article tcm_id.
         """
-        if key == 'tcm_id':
+        if key == 'article_id':
             return self.tcm_id_le
         else:
             return self.date_le
@@ -191,13 +191,14 @@ class DataPreprocessing:
         emb_vec = umap.UMAP(n_components=self.kg_emb_len, metric='cosine').fit_transform(emb_vec)
         return emb_vec
         
+        
     def fit_data_pipeline(self):
         """
         Data pre-processing pipeline defined using sklearn.pipeline.Pipeline.
         """
         text_features = ['all_text']
-        numeric_features = ['tot_pi_amt','web_sessions_cnt','branch_appts_cnt','equity_trd_cnt','rep_calls_cnt','all_text_len','tcm_click_count']
-        categorical_features = ['event_date','covered_indic','has_workplace', 'has_fili', 'has_pas','ret_only_indic','pgc_tam']
+        numeric_features = ['f_3','f_9','f_10','f_7','f_11','article_length','article_popularity']
+        categorical_features = ['xd','f_2','f_4', 'f_5', 'f_6','f_8','f_12']
 
         st_emb_Transformer = FunctionTransformer(self._st_emb_vector)
         kg_emb_Transformer = FunctionTransformer(self._kg_emb_vector)
@@ -226,27 +227,29 @@ class DataPreprocessing:
         except:
             pass
         
-        self.test_data = self.test_data.sort_values(by=['ip']).reset_index(drop=True)
-        self.train_data = self.train_data.sort_values(by=['ip']).reset_index(drop=True)
+        self.test_data = self.test_data.sort_values(by=['qid']).reset_index(drop=True)
+        self.train_data = self.train_data.sort_values(by=['qid']).reset_index(drop=True)
+
         
         df = preprocessor.fit_transform(self.train_data)
         # Prepare column names
         cat_columns = preprocessor.named_transformers_['categorical']['encoder'].get_feature_names(categorical_features)
         kg_columns = ['kg_'+str(i) for i in range(self.kg_emb_len)]
         st_columns = ['st_'+str(i) for i in range(self.st_emb_len)]
-        rest = ['ip', 'tcm_id', 'response']
+        rest = ['article_id', 'response', 'qid']
         
         columns = np.append(numeric_features, cat_columns)
         columns = np.append(columns, st_columns)
         columns = np.append(columns, kg_columns)
         columns = np.append(columns, rest)
+
         
         self.pro_train_data_df = pd.DataFrame(df, columns=columns)
         self.pro_test_data_df = pd.DataFrame(preprocessor.transform(self.test_data), columns=columns)
         
         # using dictionary to convert specific columns
-        convert_dict = {'ip': int,
-                        'tcm_id': int,
+        convert_dict = {'qid': int,
+                        'article_id': int,
                         'response': int
                        }  
 
@@ -267,12 +270,13 @@ class DataPreprocessing:
         
         kg_columns = [ 'kg_' + str(i) for i in range(self.kg_emb_len) ]
         st_columns = [ 'st_' + str(i) for i in range(self.kg_emb_len) ]
-        usr_columns = ['tot_pi_amt','web_sessions_cnt','branch_appts_cnt','equity_trd_cnt','rep_calls_cnt','covered_indic_0','covered_indic_1','has_workplace_0','has_workplace_1',
-                       'has_fili_0','has_fili_1','has_pas_0','has_pas_1','ret_only_indic_0','ret_only_indic_1','pgc_tam_Aggressive Growth','pgc_tam_Balanced','pgc_tam_Conservative',
-                       'pgc_tam_Growth','pgc_tam_Growth with Income','pgc_tam_Moderate','pgc_tam_Moderate with Income','pgc_tam_Most Aggressive','pgc_tam_None','pgc_tam_Short Term']
-        art_columns = ['all_text_len','tcm_click_count']
-        featur_cols = ['tcm_id','event_date_0' ,'event_date_1', 'event_date_2', 'event_date_3','event_date_4' ,'event_date_5' ,'event_date_6', 'event_date_7','event_date_8', 'event_date_9']
+        usr_columns = ['f_3','f_9','f_10','f_7','f_11','f_2_0','f_2_1','f_4_0','f_4_1',
+                       'f_5_0','f_5_1','f_6_0','f_6_1','f_8_0','f_8_1','f_12_Aggressive Growth','f_12_Balanced','f_12_Conservative',
+                       'f_12_Growth','f_12_Growth with Income','f_12_Moderate','f_12_Moderate with Income','f_12_Most Aggressive','f_12_None','f_12_Short Term']
+        art_columns = ['article_length','article_popularity']
 
+        featur_cols = []
+        
         for ftr in feature_list:
             if 'art' == ftr:
                 featur_cols += art_columns
@@ -283,17 +287,19 @@ class DataPreprocessing:
             elif 'st' == ftr:
                 featur_cols += st_columns
 
+        print(len(featur_cols))
+
         X_train = train_data.loc[:, train_data.columns.isin( featur_cols )]
         y_train = train_data.loc[:, train_data.columns.isin(['response'])]
-        qid_train = train_data.loc[:, train_data.columns.isin(['ip'])]
-        groups_train = train_data.groupby('ip').size().to_frame('size')['size'].to_numpy()
+        qid_train = train_data.loc[:, train_data.columns.isin(['qid'])]
+        groups_train = train_data.groupby('qid').size().to_frame('size')['size'].to_numpy()
 
         X_test = test_data.loc[:, test_data.columns.isin( featur_cols )]
         y_test = test_data.loc[:, test_data.columns.isin(['response'])]
-        qid_test = test_data.loc[:, test_data.columns.isin(['ip'])]
-        groups_test = test_data.groupby('ip').size().to_frame('size')['size'].to_numpy()
+        qid_test = test_data.loc[:, test_data.columns.isin(['qid'])]
+        groups_test = test_data.groupby('qid').size().to_frame('size')['size'].to_numpy()
 
-        test_data = test_data.loc[:, test_data.columns.isin( ['ip','tcm_id','response'] + featur_cols )]
+        test_data = test_data.loc[:, test_data.columns.isin( ['qid', 'article_id', 'response'] + featur_cols )]
 
         print(X_train.shape , y_train.shape, X_test.shape, y_test.shape)
         

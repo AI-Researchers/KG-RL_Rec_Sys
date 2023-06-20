@@ -13,6 +13,7 @@ import recmetrics
 import ltr_utils as ut
 
 
+
 class LtrPrediction:
     def __init__(self, xgb_model, test_data):
         """
@@ -22,12 +23,16 @@ class LtrPrediction:
         self.model = xgb_model
         self.test_data = test_data
         
-        group_prediction = test_data.groupby('ip').apply(self._group_predict).reset_index()
-        self.test_data_ = test_data.loc[:, ['ip','tcm_id','response']]
+        group_prediction = test_data.groupby('qid').apply(self._group_predict).reset_index()
+        self.test_data_ = test_data.loc[:, ['article_id', 'response', 'qid']]
         self.test_data_['response_pred'] = group_prediction.explode(0)[0].values
-        pivot_pred = self.test_data_.pivot_table(index='ip', columns='tcm_id', values='response_pred').fillna(0)
-        self.test_data_actual_ids = self.test_data_[self.test_data_['response'] == 1].copy().groupby('ip', as_index=False)['tcm_id'].agg({'article_actual': (lambda x: list(set(x)))})
-        self.test_data_actual_ids = self.test_data_actual_ids.set_index("ip")
+        
+        self.test_data_.response_pred = pd.to_numeric(self.test_data_.response_pred, errors='coerce')
+
+        pivot_pred = self.test_data_.pivot_table(index='qid', columns='article_id', values='response_pred').fillna(0)
+        
+        self.test_data_actual_ids = self.test_data_[self.test_data_['response'] == 1].copy().groupby('qid', as_index=False)['article_id'].agg({'article_actual': (lambda x: list(set(x)))})
+        self.test_data_actual_ids = self.test_data_actual_ids.set_index("qid")
         # make recommendations for all members in the test data
         self.article_predictions_list = []
         for ip in self.test_data_actual_ids.index:
@@ -57,7 +62,7 @@ class LtrPrediction:
         """ 
         Return size value for the max weight line 
         """
-        return  list(self.model.predict(grp_rows.loc[:, ~grp_rows.columns.isin(['ip','response'])]))
+        return  list(self.model.predict(grp_rows.loc[:, ~grp_rows.columns.isin(['article_id', 'response', 'qid'])]))
     
     def evaluate(self,K=10):
         """
@@ -69,19 +74,8 @@ class LtrPrediction:
         results_dict = {}
         #Prediction MAP
         results_dict['MAP@'+str(K)] = ut.mapk(article_actuals, article_predictions, k=K)
-        #Prediction Coverage
-        catalog = self.test_data.tcm_id.unique().tolist()
-        results_dict['Prediction_Coverage'] = recmetrics.prediction_coverage(self.article_predictions_list, catalog)
-        # Catalog Coverage
-        results_dict['Catalog_Coverage'] = recmetrics.catalog_coverage(self.article_predictions_list, catalog, 100)
-        # Novelty
-        ips = self.test_data["ip"].value_counts()
-        nov = self.test_data.tcm_id.value_counts()
-        pop = dict(nov)
-        cf_novelty,cf_mselfinfo_list = recmetrics.novelty(self.article_predictions_list, pop, len(ips), 10)
-        results_dict['Novelty'] = cf_novelty
-        # Personalization
-        results_dict['personalization'] = recmetrics.personalization(predicted= article_predictions)
+        results_dict['results@'+str(K)] = ut.eval_ranker(article_actuals, article_predictions, k=K)
+        
         
         return results_dict
     

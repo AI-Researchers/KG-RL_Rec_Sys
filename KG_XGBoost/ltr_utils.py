@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 import re
-
+import xgboost as xgb
+import os
+import pickle
 
 def load_all():
     train_df = pd.read_csv('recsys_data/train.csv')
@@ -81,3 +83,56 @@ def mapk(actual, predicted, k=10):
             The mean average precision at k over the input lists
     """
     return np.mean([apk(a, p, k) for a, p in zip(actual, predicted)])
+
+def eval_ranker(actual,predicted,k=10):
+    #Compute metrics
+    precisions, recalls, ndcgs, hits = [], [], [], []
+
+    for a,p in zip(actual, predicted):
+        if len(p)>k:
+            p = p[:k]
+        rel_set, pred_list = a,p
+        dcg = 0.0
+        hit_num = 0.0
+        for i in range(len(pred_list)):
+            if pred_list[i] in rel_set:
+                dcg += 1. / (np.log(i +2) / np.log(2))
+                hit_num += 1
+        # idcg
+        idcg = 0.0
+        for i in range(min(len(rel_set), len(pred_list))):
+            idcg += 1. / (np.log(i + 2)/np.log(2))
+        ndcg = dcg / idcg
+        recall = hit_num / len(rel_set)
+        precision = hit_num / len(pred_list)
+        hit = 1.0 if hit_num > 0.0 else 0.0
+
+
+        ndcgs.append(ndcg)
+        recalls.append(recall)
+        precisions.append(precision)
+        hits.append(hit)
+
+
+    avg_precision = np.mean(precisions)
+    avg_recall = np.mean(recalls)
+    avg_ndcg = np.mean(ndcgs)
+    avg_hit = np.mean(hits)
+
+    print('NDCG={:.3f} | Recall={:.3f} | Precision={:.3f} '.format(avg_ndcg,avg_recall,avg_hit,avg_precision))
+    return {'NDCG' : avg_ndcg, 'Recall' : avg_recall, 'Precision' : avg_precision}
+
+def model_save(model,path,DataPrep):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    model.save_model(path+'model.json')
+    with open(path+'dataprep.pkl','wb') as f:
+        pickle.dump(DataPrep, f)
+
+
+def load_model(path):
+    model = xgb.XGBRanker()
+    model.load_model(path+'model.json')
+    with open(path+'dataprep.pkl','rb') as f:
+        DataPrep = pickle.load(f)
+    return model , DataPrep
