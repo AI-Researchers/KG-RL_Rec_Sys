@@ -132,6 +132,9 @@ Run TuckER
   mv opendialkg_entity_embeddings.txt outputs/KGs/KG_dep_parsing_500terms.txt
 
 ```
+### TransE Embeddings
+
+The `TransE_embedding_creation.ipynb` file contains the steps for generating TransE embeddings created from structured Knowledge Graphs. Using the pickle file containing the TransE embeddings and the map files with the mapping for each embedding, a combined transE embedding file can be created. To avoid duplicates, the combined embedding is created by adding all the embeddings for words then other unique products, product tags, topic and topic tags are added.  
 
 ### XGBoost_model
 
