@@ -134,7 +134,7 @@ Run TuckER
 ```
 ### TransE Embeddings
 
-The `TransE_embedding_creation.ipynb` file contains the steps for generating TransE embeddings created from structured Knowledge Graphs. Using the pickle file containing the TransE embeddings and the map files with the mapping for each embedding, a combined transE embedding file can be created. To avoid duplicates, the combined embedding is created by adding all the embeddings for words then other unique products, product tags, topic and topic tags are added.  
+The `TransE_embedding_creation.ipynb` file contains the steps for generating TransE embeddings created from structured Knowledge Graphs. The TransE embedding pickle file is created by running the `KG_RL_Rec_Sys.ipynb` file in root directory of the repository. The map files containing the maping of each word, topic, product, etc. with its corresponding indices is generated from the `processing.ipynb` in the root direcotory of the repository. Using the pickle file containing the TransE embeddings and the map files with the mapping for each embedding, a combined transE embedding file can be created. To avoid duplicates, the combined embedding is created by adding all the embeddings for words then other unique products, product tags, topic and topic tags are added.  
 
 ### XGBoost_model
 
